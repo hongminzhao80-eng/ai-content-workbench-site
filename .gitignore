@@ -6,3 +6,5 @@ preview.log
 *.docx
 .DS_Store
 Thumbs.db
+
+.deploy-tmp/
