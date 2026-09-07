@@ -23,10 +23,11 @@ const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
 const fn = (cfg.functions || []).find((f) => f.name === "admin-leads");
 if (!fn) { console.error("cloudbaserc.json 缺少 admin-leads 配置"); process.exit(1); }
 
-// 注入真 key（内存态，不落盘）
+// 注入真 key：必须写回磁盘（CLI 部署时读取的是 cloudbaserc.json 文件）
 fn.envVariables = fn.envVariables || {};
 const hadKey = fn.envVariables.ADMIN_KEY;
 fn.envVariables.ADMIN_KEY = key;
+fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2) + "\n", "utf8");
 
 // Windows 下 tcb 是 .cmd shim，Node spawn 无法直接执行 → 用 node 直调 CLI js 入口
 function resolveCli() {
