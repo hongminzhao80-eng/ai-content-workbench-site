@@ -4,6 +4,8 @@
 
 交付决策（已与需求方确认）：1) 零依赖静态官网前台，可部署任意静态托管/CDN；2) 全量页面（首页/产品/4 行业/案例/试用/演示/合作/内容中心/关于/隐私/条款/404 共 26 个 HTML 页面）；3) 源文件未提供的品牌信息一律占位并在产物中标注，正式上线前按下方替换清单处理。
 
+> 📘 **完整管理员操作手册（日常运维/后台/口令/备份/排障）见 [docs/admin-guide.md](docs/admin-guide.md)**
+
 ## 一、快速开始
 
 环境要求：Node.js 18+，全程零 npm 依赖。
@@ -79,7 +81,6 @@
 - 管理口令：见本地文件 `.admin-key`（**已 gitignore，禁止提交仓库**；公开仓库不得出现明文口令）。
 - 更换口令：重新生成后执行 `tcb fn deploy admin-leads -e gzzhm518-d2g3ba6o6ecfb077f`（覆盖确认输 y）；部署前请先在 cloudbaserc.json 的 admin-leads.envVariables.ADMIN_KEY 填入真实值（默认占位 REPLACE_BEFORE_DEPLOY）。
 - 说明：轻量口令保护，仅用于内部查看；体验版无法配置网关鉴权，正式运营建议升级套餐并加网关鉴权（enableAuth=true）/接入 CMS 登录。
-- 演示模式说明：demoMode=true 时，网络层失败会进入本地演示成功态并明确提示“本次填写未保存”（不伪装真实提交）；后端接入后置 false。
 
 请求示例（设计 §6.3）：
 
@@ -190,10 +191,15 @@
 - Branch：gh-pages / (root) → Save
 - 访问地址：https://hongminzhao80-eng.github.io/ai-content-workbench-site/
 
-> 后续更新站点：修改后执行 `node scripts/publish-pages.mjs`（自动 rebuild、提交 main、重建 gh-pages），再推送：
-> `git push origin main` 与 `git push origin gh-pages --force`（部署分支整分支替换，须 force）。
+> 后续更新站点（当前线上状态）：
+> 1. `node scripts/build.mjs` + `node scripts/check.mjs`（构建与质量门禁）；
+> 2. `node scripts/publish-pages.mjs "说明"`（提交 main、重建 gh-pages 分支）；
+> 3. 推送：`git push origin main` 与 `git push origin gh-pages --force`。
+> - 推送走 **SSH**（已配置）；若 GitHub 22 端口超时，改用 443：
+>   `git push ssh://git@ssh.github.com:443/hongminzhao80-eng/ai-content-workbench-site.git main`（gh-pages 同理加 --force）。
+> - GitHub Pages CDN 缓存约 1–10 分钟，线上核对请 Ctrl+F5。
 
 ### 部署后必改项
 1. 正式域名未知，canonical/sitemap 仍指向占位域名 https://www.example.com —— 上线正式域名后改 site.config.js 的 domain 并重新 npm run build + 推送两个分支；
 2. 真实素材（截图/海报/折页 PDF）务必先完成“上线前复核清单”（见 README 第十节）再公开展示；
-3. 表单提交接口为演示模式（未连接后端），公开后可保留或接入 /api/v1/leads。
+3. 表单已接入 CloudBase 后端（lead-api + 网关 /api/v1，见第四节与 docs/admin-guide.md），非演示模式；正式对外前完成第 1 项域名替换。
