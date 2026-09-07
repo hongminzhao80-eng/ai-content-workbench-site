@@ -175,6 +175,9 @@
 - Branch：gh-pages / (root) → Save
 - 访问地址：https://hongminzhao80-eng.github.io/ai-content-workbench-site/
 
+> 后续更新站点：修改后执行 `node scripts/publish-pages.mjs`（自动 rebuild、提交 main、重建 gh-pages），再推送：
+> `git push origin main` 与 `git push origin gh-pages --force`（部署分支整分支替换，须 force）。
+
 ### 部署后必改项
 1. 正式域名未知，canonical/sitemap 仍指向占位域名 https://www.example.com —— 上线正式域名后改 site.config.js 的 domain 并重新 npm run build + 推送两个分支；
 2. 真实素材（截图/海报/折页 PDF）务必先完成“上线前复核清单”（见 README 第十节）再公开展示；
