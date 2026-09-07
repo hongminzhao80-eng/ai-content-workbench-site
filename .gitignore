@@ -1,0 +1,8 @@
+node_modules/
+.preview.pid
+preview.log
+*.log
+# 内部需求/设计文档（docx）不进入公开仓库；如需公开发布请删除下面一行
+*.docx
+.DS_Store
+Thumbs.db

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.example.com/sitemap.xml
+
+# 上线接入 CMS/管理端后，请追加：
+# Disallow: /admin
+# Disallow: /api/admin
