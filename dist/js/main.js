@@ -286,6 +286,12 @@
             if (res.status >= 200 && res.status < 300) {
               return res.json().then(function (d) { onSuccess(false, d && d.message); }).catch(function () { onSuccess(false, ""); });
             }
+            if (cfg.demoMode) {
+              // 演示模式：静态托管/未接入后端时，POST 不可达（405/404 等）也进入演示成功态，并明确标注未保存
+              window.console && window.console.info("[aiw-demo] 未连接提交服务（HTTP " + res.status + "），payload：", payload);
+              onSuccess(true);
+              return;
+            }
             if (res.status === 400) { onFail("请检查必填信息和格式后再提交。"); return; }
             if (res.status === 409) { onFail("已收到您的申请，请勿重复提交。"); return; }
             if (res.status === 429) { onFail("提交过于频繁，请稍后再试。"); return; }
