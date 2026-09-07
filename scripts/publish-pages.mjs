@@ -54,7 +54,7 @@ try {
   fs.writeFileSync(path.join(tmp, "README.md"), "# ai-content-workbench-site (gh-pages)\n\nGitHub Pages 静态托管分支，由主分支 dist/ 产物生成（node scripts/build.mjs）。源码见 main 分支。\n", "utf8");
   git(["add", "-A"], tmp);
   git(["commit", "-m", "deploy(gh-pages): " + (changed ? msg : "同步 dist 产物")], tmp);
-  git(["push", root, "gh-pages:gh-pages"], tmp);
+  git(["push", "--force", root, "gh-pages:gh-pages"], tmp);
   console.log("gh-pages 分支已更新。");
 } finally {
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* 忽略临时目录清理失败 */ }
