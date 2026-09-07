@@ -59,7 +59,9 @@ function renderLock(){
   document.getElementById("k").focus();
 }
 function tryKey(){
-  var k = document.getElementById("k").value.trim();
+  var kEl = document.getElementById("k");
+  if(!kEl){ renderLock(); return; }
+  var k = kEl.value.trim();
   if(!k){ return; }
   fetch(BASE + "/api?action=check&key=" + encodeURIComponent(k))
     .then(function(res){
@@ -123,6 +125,11 @@ function bindToolbar(){
   document.getElementById("fStatus").addEventListener("change", load);
 }
 function load(){
+  // 若工具栏尚未渲染（如带已存口令直接进入），先渲染骨架再读取
+  if(!document.getElementById("fType")){
+    document.getElementById("root").innerHTML = toolbar() + '<div class="empty">加载中…</div>';
+    bindToolbar();
+  }
   var type = document.getElementById("fType").value;
   var status = document.getElementById("fStatus").value;
   var q = BASE + "/api?action=list&key=" + encodeURIComponent(KEY) + "&type=" + encodeURIComponent(type) + "&status=" + encodeURIComponent(status);
