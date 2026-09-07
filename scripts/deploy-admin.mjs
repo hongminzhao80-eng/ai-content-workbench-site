@@ -28,14 +28,23 @@ fn.envVariables = fn.envVariables || {};
 const hadKey = fn.envVariables.ADMIN_KEY;
 fn.envVariables.ADMIN_KEY = key;
 
+// Windows 下 tcb 是 .cmd shim，Node spawn 无法直接执行 → 用 node 直调 CLI js 入口
+function resolveCli() {
+  const candidates = [
+    process.env.APPDATA ? path.join(process.env.APPDATA, "npm/node_modules/@cloudbase/cli/dist/standalone/cli.js") : null,
+    path.join(os.homedir(), "AppData/Roaming/npm/node_modules/@cloudbase/cli/dist/standalone/cli.js")
+  ].filter(Boolean);
+  for (const c of candidates) { if (fs.existsSync(c)) return c; }
+  return null;
+}
+const cliJs = resolveCli();
+if (!cliJs) { console.error("未找到 CloudBase CLI（@cloudbase/cli），请先安装"); process.exit(1); }
+
 try {
-  const r = spawnSync("tcb", ["fn", "deploy", "admin-leads", "-e", envId], {
-    cwd: root,
-    encoding: "utf8",
-    timeout: 240000,
-    stdio: "inherit",
-    env: { ...process.env }
-  });
+  const args = ["fn", "deploy", "admin-leads", "-e", envId];
+  const r = cliJs
+    ? spawnSync(process.execPath, [cliJs].concat(args), { cwd: root, encoding: "utf8", timeout: 240000, stdio: ["pipe", "inherit", "inherit"], input: "y\n", env: { ...process.env } })
+    : spawnSync("tcb", args, { cwd: root, encoding: "utf8", timeout: 240000, stdio: "inherit", shell: true, env: { ...process.env } });
   if (r.status !== 0) {
     console.error("部署失败，请确认已 tcb login 且环境正确：" + envId);
     process.exit(r.status || 1);

@@ -61,10 +61,19 @@ function renderLock(){
 function tryKey(){
   var k = document.getElementById("k").value.trim();
   if(!k){ return; }
-  fetch(BASE + "/api?action=check&key=" + encodeURIComponent(k)).then(function(r){ return r.json(); }).then(function(d){
-    if(d.code === 0){ KEY = k; sessionStorage.setItem("lead_admin_key", k); load(); }
-    else { document.getElementById("err").textContent = (d && d.message) || "口令错误"; }
-  }).catch(function(){ document.getElementById("err").textContent = "网络错误，请重试"; });
+  fetch(BASE + "/api?action=check&key=" + encodeURIComponent(k))
+    .then(function(res){
+      if(!res.ok){ return res.json().catch(function(){ throw new Error("HTTP " + res.status); }); }
+      return res.json();
+    })
+    .then(function(d){
+      if(d && d.code === 0){ KEY = k; sessionStorage.setItem("lead_admin_key", k); load(); }
+      else { document.getElementById("err").textContent = (d && d.message) || "口令错误"; }
+    })
+    .catch(function(e){
+      var msg = (e && e.message) || "网络错误";
+      document.getElementById("err").textContent = "连接失败：" + msg + "，请检查网络或稍后重试";
+    });
 }
 function toolbar(){
   return '<div class="toolbar">' +
@@ -126,7 +135,7 @@ function load(){
     } else {
       document.getElementById("root").innerHTML = '<div class="err" style="padding:20px">' + h((d && d.message) || "加载失败") + '</div>';
     }
-  }).catch(function(){ document.getElementById("root").innerHTML = '<div class="err" style="padding:20px">加载失败，请刷新重试</div>'; });
+  }).catch(function(e){ document.getElementById("root").innerHTML = '<div class="err" style="padding:20px">加载失败：' + h((e && e.message) || "网络错误") + '，请刷新重试</div>'; });
 }
 function doSet(id, actn){
   var lbl = sLabel(actn);

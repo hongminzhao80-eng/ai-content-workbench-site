@@ -32,7 +32,11 @@ function getDb() {
 function respond(statusCode, obj, ct) {
   return {
     statusCode,
-    headers: { "Content-Type": ct || "application/json; charset=utf-8" },
+    headers: {
+      "Content-Type": ct || "application/json; charset=utf-8",
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "Pragma": "no-cache"
+    },
     body: typeof obj === "string" ? obj : JSON.stringify(obj)
   };
 }
