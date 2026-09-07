@@ -19,3 +19,6 @@ cloudfunctions/*/package-lock.json
 .test-cache2.ps1
 .tcb/
 .admin-key
+# 管理口令文件（含全角/连字符变体）
+.admin-key
+admin*key
