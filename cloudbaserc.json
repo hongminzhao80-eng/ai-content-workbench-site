@@ -10,6 +10,18 @@
       "installDependency": true,
       "handler": "index.main",
       "ignore": []
+    },
+    {
+      "name": "admin-leads",
+      "timeout": 10,
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "installDependency": true,
+      "handler": "index.main",
+      "ignore": [],
+      "envVariables": {
+        "ADMIN_KEY": "REPLACE_BEFORE_DEPLOY"
+      }
     }
   ],
   "gateway": {
@@ -17,6 +29,11 @@
       {
         "path": "/api/v1",
         "target": "function:lead-api",
+        "enableSafeDomain": false
+      },
+      {
+        "path": "/admin",
+        "target": "function:admin-leads",
         "enableSafeDomain": false
       }
     ]

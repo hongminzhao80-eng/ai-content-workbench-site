@@ -18,3 +18,4 @@ cloudfunctions/*/package-lock.json
 .test-*.ps1
 .test-cache2.ps1
 .tcb/
+.admin-key

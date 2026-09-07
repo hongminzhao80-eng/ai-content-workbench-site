@@ -72,6 +72,15 @@
   - 重新部署云函数：`tcb fn deploy lead-api -e gzzhm518-d2g3ba6o6ecfb077f`（覆盖确认输 y）；网关路由变更：改 cloudbaserc.json 后 `tcb deploy --only=gateway -e <env>`
 - 演示模式说明：demoMode=true 时，网络层失败会进入本地演示成功态并明确提示“本次填写未保存”（不伪装真实提交）；后端接入后置 false。
 
+### 线索管理后台（CloudBase admin-leads）
+
+- 后台地址：https://gzzhm518-d2g3ba6o6ecfb077f-1251417578.ap-shanghai.app.tcloudbase.com/admin
+- 功能：查看全部线索（试用/演示/合作）、按类型与状态筛选、标记「已联系/已完成/无效」、删除；页面打开后输入管理口令即可使用（口令存 sessionStorage，支持锁定退出）。
+- 管理口令：见本地文件 `.admin-key`（**已 gitignore，禁止提交仓库**；公开仓库不得出现明文口令）。
+- 更换口令：重新生成后执行 `tcb fn deploy admin-leads -e gzzhm518-d2g3ba6o6ecfb077f`（覆盖确认输 y）；部署前请先在 cloudbaserc.json 的 admin-leads.envVariables.ADMIN_KEY 填入真实值（默认占位 REPLACE_BEFORE_DEPLOY）。
+- 说明：轻量口令保护，仅用于内部查看；体验版无法配置网关鉴权，正式运营建议升级套餐并加网关鉴权（enableAuth=true）/接入 CMS 登录。
+- 演示模式说明：demoMode=true 时，网络层失败会进入本地演示成功态并明确提示“本次填写未保存”（不伪装真实提交）；后端接入后置 false。
+
 请求示例（设计 §6.3）：
 
     POST /api/v1/leads   Content-Type: application/json
