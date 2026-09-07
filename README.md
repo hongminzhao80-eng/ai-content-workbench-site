@@ -63,8 +63,14 @@
 ## 四、表单与后端接入契约
 
 - 页面内置试用/演示/合作三套表单，字段按需求 §9.2 与 §10，提交 payload 对齐设计文档 §6.3。
-- 演示模式：site.config.js → forms.demoMode = true（默认）。后端未接入时，提交走本地演示成功态并明确提示“未连接提交服务，本次填写未保存”；接入后端后置为 false（代码会优先尝试真实 POST，失败才演示兜底）。
-- 提交地址：试用/演示 → POST /api/v1/leads；合作 → POST /api/v1/partners（端点在 site.config.js 可改）。
+- **已接入 CloudBase 云函数后端（2026-09）**：`site.config.js → forms.demoMode = false`，表单提交真实入库。
+  - 环境：`gzzhm518-d2g3ba6o6ecfb077f`（体验版，2027-02-25 到期，ap-shanghai）
+  - 云函数：`lead-api`（cloudfunctions/lead-api，服务端校验 + 幂等 + 限流 + Origin 白名单，自动建集合 `leads`）
+  - HTTP 网关：https://gzzhm518-d2g3ba6o6ecfb077f-1251417578.ap-shanghai.app.tcloudbase.com/api/v1
+  - 提交地址：试用/演示 → POST /api/v1/leads；合作 → POST /api/v1/partners（site.config.js 可改）
+  - 查看/导出线索：`tcb db nosql dump leads --file-type json --output-dir ./exports -e gzzhm518-d2g3ba6o6ecfb077f`，或控制台「云开发 → 数据库 → leads」（https://console.cloud.tencent.com/tcb/database）
+  - 重新部署云函数：`tcb fn deploy lead-api -e gzzhm518-d2g3ba6o6ecfb077f`（覆盖确认输 y）；网关路由变更：改 cloudbaserc.json 后 `tcb deploy --only=gateway -e <env>`
+- 演示模式说明：demoMode=true 时，网络层失败会进入本地演示成功态并明确提示“本次填写未保存”（不伪装真实提交）；后端接入后置 false。
 
 请求示例（设计 §6.3）：
 
