@@ -6,6 +6,9 @@
  * 数据库：集合 leads（tcb db 或控制台可查询/导出）
  * ========================================================================== */
 const cloudbase = require("@cloudbase/node-sdk");
+const nodemailer = require("nodemailer");
+
+const ADMIN_URL = "https://gzzhm518-d2g3ba6o6ecfb077f-1251417578.ap-shanghai.app.tcloudbase.com/admin"; // 后台地址（邮件内指引）
 
 const ALLOWED_ORIGINS = [
   "https://hongminzhao80-eng.github.io", // GitHub Pages 线上
@@ -135,6 +138,93 @@ async function ensureCollection(db, name) {
   return true;
 }
 
+
+// ---- 新线索邮件通知（SMTP 环境变量未配置时自动跳过，不影响提交）----
+const TYPE_CN = { trial: "试用申请", demo: "演示预约", partner: "渠道合作申请" };
+const ORG_CN = {
+  hospital: "医院/医疗机构", education: "学校/教育机构", government: "政府/事业单位",
+  enterprise: "企业", association: "协会", chain: "连锁机构", other: "其他"
+};
+const NEED_CN = {
+  copywriting: "写稿/内容生成", wechat_layout: "公众号排版", poster: "海报制作",
+  leaflet: "宣传折页/单页", short_video: "短视频脚本", wecom: "企业微信发送", other: "其他"
+};
+
+async function resolveNotifyTo(db) {
+  // 收件人：后台配置的 app_config.notify_settings.to_email；未配置时默认发件人本人
+  try {
+    const r = await db.collection("app_config").where({ _id: "notify_settings" }).limit(1).get();
+    const d = r && r.data && r.data[0];
+    if (d && d.to_email && String(d.to_email).indexOf("@") > 0) return String(d.to_email).trim();
+  } catch (e) { /* 集合/文档不存在则用默认 */ }
+  return (process.env.SMTP_USER || "").trim();
+}
+
+async function sendNewLeadMail(db, lead) {
+  const user = String(process.env.SMTP_USER || "").trim();
+  const pass = String(process.env.SMTP_PASS || "").trim();
+  if (!user || !pass) {
+    console.info("[lead-api] SMTP_USER/SMTP_PASS 未配置，跳过邮件通知");
+    return { skipped: true };
+  }
+  const host = String(process.env.SMTP_HOST || "smtp.qq.com").trim();
+  const port = parseInt(process.env.SMTP_PORT || "465", 10) || 465;
+  const to = await resolveNotifyTo(db);
+  if (!to) return { skipped: true, reason: "no-recipient" };
+
+  const lines = [];
+  lines.push("【官网新线索】" + (TYPE_CN[lead.lead_type] || lead.lead_type) + " - " + lead.organization_name);
+  lines.push("");
+  lines.push("类型：" + (TYPE_CN[lead.lead_type] || lead.lead_type));
+  lines.push("机构/公司：" + lead.organization_name);
+  if (lead.organization_type) lines.push("行业：" + (ORG_CN[lead.organization_type] || lead.organization_type));
+  if (lead.province || lead.city) lines.push("地区：" + (lead.province || "") + " " + (lead.city || ""));
+  lines.push("联系人：" + lead.contact_name);
+  lines.push("手机号：" + lead.mobile);
+  if (lead.wechat) lines.push("微信：" + lead.wechat);
+  if (lead.team_size) lines.push("团队规模：" + lead.team_size + " 人");
+  if (Array.isArray(lead.needs) && lead.needs.length) {
+    lines.push("想解决的问题：" + lead.needs.map(function (n) { return NEED_CN[n] || n; }).join("、"));
+  }
+  if (lead.business) lines.push("主营业务：" + lead.business);
+  if (lead.coverage) lines.push("覆盖区域：" + lead.coverage);
+  if (lead.message) lines.push("补充说明：" + lead.message);
+  lines.push("");
+  lines.push("提交时间：" + (lead.created_at || ""));
+  lines.push("来源：" + (lead.source || "direct") + (lead.source_page ? "（" + lead.source_page + "）" : ""));
+  lines.push("");
+  lines.push("请及时登录官网管理后台跟进：");
+  lines.push(ADMIN_URL);
+
+  const transporter = nodemailer.createTransport({
+    host: host,
+    port: port,
+    secure: port === 465,
+    auth: { user: user, pass: pass }
+  });
+
+  const mail = await transporter.sendMail({
+    from: "\"" + (process.env.SMTP_FROM_NAME || "AI内容创作工作台官网") + "\" <" + user + ">",
+    to: to,
+    subject: "官网新线索：" + (TYPE_CN[lead.lead_type] || lead.lead_type) + " · " + lead.organization_name + "（请跟进）",
+    text: lines.join("\n")
+  });
+  return { ok: true, id: mail && mail.messageId };
+}
+
+async function notifyNewLead(db, lead) {
+  // 总超时 12s，失败只记日志，绝不阻断提交响应
+  const timeout = new Promise(function (_, reject) {
+    setTimeout(function () { reject(new Error("mail timeout")); }, 12000);
+  });
+  try {
+    return await Promise.race([sendNewLeadMail(db, lead), timeout]);
+  } catch (e) {
+    console.error("[lead-api] 邮件通知失败", e && e.message);
+    return { failed: true };
+  }
+}
+
 exports.main = async (event = {}) => {
   const headers = event.headers || {};
   const origin = String(headers.origin || headers.Origin || "");
@@ -202,6 +292,8 @@ exports.main = async (event = {}) => {
     delete doc.landing_page; // 已并入 source_page（保留原字段亦可，见注释）
 
     const addRes = await col.add(doc).catch((e) => { throw e; });
+    // 新线索即时邮件通知（SMTP 未配置或失败都不影响提交成功）
+    await notifyNewLead(db, doc);
     return respond(201, { code: 0, message: "提交成功", id: addRes && addRes.id }, origin);
   } catch (e) {
     console.error("[lead-api] db error", e && e.message, e && e.stack);

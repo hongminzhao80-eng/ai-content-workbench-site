@@ -15,6 +15,7 @@
   .toolbar select, .toolbar input, .toolbar button { padding:7px 10px; border:1px solid #c6d4cc; border-radius:6px; font-size:13px; background:#fff; }
   .toolbar button { background:var(--gl); color:#fff; border-color:var(--gl); cursor:pointer; }
   .toolbar .key-box { margin-left:auto; display:flex; gap:6px; align-items:center; }
+  .toolbar .mail-box { display:flex; gap:6px; align-items:center; margin-left:10px; }
   table { width:100%; border-collapse:collapse; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.06); font-size:13px; }
   th, td { border-bottom:1px solid var(--line); padding:9px 10px; text-align:left; vertical-align:top; }
   th { background:#eef4f0; font-weight:600; white-space:nowrap; }
@@ -83,6 +84,7 @@ function toolbar(){
     '<select id="fStatus"><option value="">全部状态</option><option value="new">新线索</option><option value="contacted">已联系</option><option value="done">已完成</option><option value="invalid">无效</option></select>' +
     '<button id="btnRefresh">刷新</button>' +
     '<span id="total" style="font-size:12px;color:#7a8a83"></span>' +
+    '<span class="mail-box"><button id="btnMail" class="mini">通知邮箱</button></span>' +
     '<span class="key-box"><button id="btnLock" class="mini">锁定 / 退出</button></span>' +
     '</div>';
 }
@@ -121,6 +123,7 @@ function rows(data){
 function bindToolbar(){
   document.getElementById("btnRefresh").addEventListener("click", load);
   document.getElementById("btnLock").addEventListener("click", lock);
+  document.getElementById("btnMail").addEventListener("click", mailSettings);
   document.getElementById("fType").addEventListener("change", load);
   document.getElementById("fStatus").addEventListener("change", load);
 }
@@ -170,6 +173,20 @@ document.addEventListener("click", function(ev){
   }
   doSet(id, actn);
 });
+function mailSettings(){
+  fetch(BASE + "/api?action=getconfig&key=" + encodeURIComponent(KEY)).then(function(r){ return r.json(); }).then(function(d){
+    var cur = (d && d.code === 0 && d.data && d.data.to_email) ? d.data.to_email : "";
+    var tip = "当前通知邮箱：" + (cur || "（未设置 → 默认发件邮箱本人）") + "\n\n请输入新的新线索通知收件邮箱：";
+    var v = window.prompt(tip, cur || "");
+    if(v === null){ return; }
+    v = v.trim();
+    if(!v){ alert("邮箱不能为空"); return; }
+    fetch(BASE + "/api?action=setconfig&key=" + encodeURIComponent(KEY) + "&email=" + encodeURIComponent(v)).then(function(r){ return r.json(); }).then(function(d2){
+      if(d2.code === 0){ alert("已保存：" + v + "。之后新线索会发送到该邮箱。"); }
+      else { alert((d2 && d2.message) || "保存失败"); }
+    }).catch(function(){ alert("保存失败，请重试"); });
+  }).catch(function(){ alert("读取当前配置失败"); });
+}
 function lock(){ sessionStorage.removeItem("lead_admin_key"); KEY = ""; renderLock(); }
 (function init(){
   if(!KEY){ renderLock(); } else { load(); }

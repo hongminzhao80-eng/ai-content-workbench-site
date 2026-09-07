@@ -29,6 +29,22 @@ function getDb() {
   return cloudbase.init({ env: env || undefined }).database();
 }
 
+async function ensureCollection(db, name) {
+  try {
+    const list = await db.collection(name).limit(1).get();
+    if (list && Array.isArray(list.data)) return true;
+  } catch (e) {
+    if (!e || !/not exist|NOT_EXIST|collection/i.test(String(e.message || e.errMsg || e.code || ""))) throw e;
+  }
+  if (db.createCollection) {
+    await db.createCollection(name).catch((e2) => {
+      if (e2 && /exist|EXIST/i.test(String(e2.message || e2.errMsg || e2.code || ""))) return;
+      throw e2;
+    });
+  }
+  return true;
+}
+
 function respond(statusCode, obj, ct) {
   return {
     statusCode,
@@ -46,7 +62,7 @@ exports.main = async (event = {}) => {
   const qs = event.queryStringParameters || {};
   const key = String(qs.key || "").trim();
   const action = String(qs.action || "").trim();
-  const isApi = ["check", "list", "set", "del"].indexOf(action) >= 0;
+  const isApi = ["check", "list", "set", "del", "getconfig", "setconfig"].indexOf(action) >= 0;
 
   // 页面（无 action 的 GET）
   if (!isApi && method === "GET") {
@@ -60,6 +76,8 @@ exports.main = async (event = {}) => {
 
   const db = getDb();
   const col = db.collection("leads");
+  const cfgCol = function () { return db.collection("app_config"); };
+  
 
   try {
     if (action === "check") return respond(200, { code: 0, data: true });
@@ -100,6 +118,31 @@ exports.main = async (event = {}) => {
       if (!id) return respond(400, { code: 400, message: "缺少 id" });
       await col.doc(id).remove();
       return respond(200, { code: 0, message: "已删除" });
+    }
+
+    if (action === "getconfig") {
+      await ensureCollection(db, "app_config");
+      try {
+        const r = await cfgCol().where({ _id: "notify_settings" }).limit(1).get();
+        const d = r && r.data && r.data[0];
+        return respond(200, { code: 0, data: { to_email: (d && d.to_email) || "", enabled: !!(d && d.enabled) } });
+      } catch (e) {
+        return respond(200, { code: 0, data: { to_email: "", enabled: false } });
+      }
+    }
+
+    if (action === "setconfig") {
+      await ensureCollection(db, "app_config");
+      const email = String(qs.email || "").trim();
+      if (!email || email.length > 200 || email.indexOf("@") < 1) {
+        return respond(400, { code: 400, message: "邮箱格式不正确" });
+      }
+      await cfgCol().doc("notify_settings").set({
+        to_email: email,
+        enabled: true,
+        updated_at: new Date().toISOString()
+      });
+      return respond(200, { code: 0, message: "通知邮箱已保存" });
     }
 
     return respond(400, { code: 400, message: "未知操作" });

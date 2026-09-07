@@ -73,6 +73,7 @@
   - 查看/导出线索：`tcb db nosql dump leads --file-type json --output-dir ./exports -e gzzhm518-d2g3ba6o6ecfb077f`，或控制台「云开发 → 数据库 → leads」（https://console.cloud.tencent.com/tcb/database）
   - 重新部署云函数：`tcb fn deploy lead-api -e gzzhm518-d2g3ba6o6ecfb077f`（覆盖确认输 y）；网关路由变更：改 cloudbaserc.json 后 `tcb deploy --only=gateway -e <env>`
 - 演示模式说明：demoMode=true 时，网络层失败会进入本地演示成功态并明确提示“本次填写未保存”（不伪装真实提交）；后端接入后置 false。
+- 新线索即时邮件通知：后台「通知邮箱」设置收件邮箱；SMTP 发件凭据配在 lead-api 环境变量（SMTP_HOST/PORT/USER/PASS），详见 docs/admin-guide.md 6.5 节。
 
 ### 线索管理后台（CloudBase admin-leads）
 

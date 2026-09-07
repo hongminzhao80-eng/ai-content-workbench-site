@@ -91,6 +91,20 @@
 - 前端改动：改 cloudfunctions/admin-leads/page.html 后运行同一部署脚本即可。
 - 后台访问与 API 同源，无跨域问题；页面响应带 Cache-Control: no-store，浏览器不会缓存旧版。
 
+## 6.5 新线索邮件即时通知
+
+- 官网表单新提交会即时向「通知邮箱」发邮件提醒（类型/机构/联系人/手机/留言/后台链接）；发送失败不影响线索入库（201 仍返回）。
+- 发件配置（lead-api 云函数环境变量，凭据请到控制台配置、勿入仓库）：
+  - SMTP_HOST=smtp.qq.com
+  - SMTP_PORT=465
+  - SMTP_USER=发件QQ邮箱
+  - SMTP_PASS=该邮箱的 SMTP 授权码（QQ 邮箱：设置→账户→开启服务→生成授权码）
+  - （可选）SMTP_FROM_NAME=发件显示名
+- 收件人设置：管理后台 → 工具栏「通知邮箱」按钮 → 输入收件邮箱（存 app_config.notify_settings）；
+  未设置时默认发给 SMTP_USER（发件本人）。
+- 自检：SMTP 配好后，提交一条官网测试线索，应能在收件箱收到「官网新线索」邮件；收不到先查 lead-api 函数日志（console.error 含邮件通知失败原因）。
+- 注意：更换/重部署 lead-api 时若 cloudbaserc.json 无 envVariables，云端 SMTP_* 环境变量可能被保留也可能被覆盖——重部署后建议用上面自检再验证一次；稳妥做法是先导出再设置。
+
 ## 7. 故障排查速查表（来自真实排障经验）
 
 | 现象 | 原因 | 处理 |
