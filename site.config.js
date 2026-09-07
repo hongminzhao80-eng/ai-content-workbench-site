@@ -50,12 +50,13 @@ export const site = {
 
   // ---------- 表单（需求 §9 / 设计 §6、§20） ----------
   forms: {
-    // demoMode=true：本地预览/未接入后端时，提交不可达将进入“演示模式成功态”（明确标注未保存）。
-    // 后端就绪后置 false（或保持 true，代码会优先尝试真实 POST）。
-    demoMode: true,
+    // demoMode=false：已接入 CloudBase 云函数后端（lead-api），提交真实入库。
+    // 环境：gzzhm518-d2g3ba6o6ecfb077f（体验版）；函数 HTTP 网关见下两行。
+    demoMode: false,
     // 提交接口（设计文档 §6.1：POST /api/v1/leads、POST /api/v1/partners）
-    leadsEndpoint: "/api/v1/leads",
-    partnersEndpoint: "/api/v1/partners",
+    // CloudBase HTTP 访问服务（体验版无法配置安全域名，由云函数内部做 Origin 白名单校验）
+    leadsEndpoint: "https://gzzhm518-d2g3ba6o6ecfb077f-1251417578.ap-shanghai.app.tcloudbase.com/api/v1/leads",
+    partnersEndpoint: "https://gzzhm518-d2g3ba6o6ecfb077f-1251417578.ap-shanghai.app.tcloudbase.com/api/v1/partners",
     // 手机号校验：中国大陆手机号基础格式
     mobilePattern: "^1[3-9]\\d{9}$"
   },

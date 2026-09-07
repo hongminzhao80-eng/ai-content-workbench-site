@@ -9,3 +9,12 @@ Thumbs.db
 
 .deploy-tmp/
 .test-cache/
+
+# CloudBase 云函数依赖与本地导出
+cloudfunctions/*/node_modules/
+cloudfunctions/*/package-lock.json
+.db-export*/
+.test-*.mjs
+.test-*.ps1
+.test-cache2.ps1
+.tcb/

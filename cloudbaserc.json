@@ -1,0 +1,24 @@
+{
+  "envId": "gzzhm518-d2g3ba6o6ecfb077f",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {
+      "name": "lead-api",
+      "timeout": 10,
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "installDependency": true,
+      "handler": "index.main",
+      "ignore": []
+    }
+  ],
+  "gateway": {
+    "routes": [
+      {
+        "path": "/api/v1",
+        "target": "function:lead-api",
+        "enableSafeDomain": false
+      }
+    ]
+  }
+}
